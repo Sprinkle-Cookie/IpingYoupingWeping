@@ -1,0 +1,25 @@
+{
+  "description": "measure lag between our comps!",
+  "name": "IpingYoupingWeping",
+  "manifest_version": 2,
+  "version": "0.0.1",
+
+  "background": {
+  "page": "background.html"
+  },
+
+  "permissions": ["<all_urls>", "tabs"],
+
+  "browser_action": {
+      "default_icon": "icons/pazzo.png",
+      "default_title": "ping it!"
+  },
+
+
+    "applications": {
+      "gecko": {
+        "id": "synchropazzo@gmail.com"
+      }
+    }
+
+}
