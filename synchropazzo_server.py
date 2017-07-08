@@ -3,28 +3,54 @@ The MIT License (MIT)
 Copyright (c) 2013 Dave P.
 '''
 
+import asyncio
 import signal
 import sys
 import ssl
 from SimpleWebSocketServer import WebSocket, SimpleWebSocketServer, SimpleSSLWebSocketServer
 from optparse import OptionParser
 import json
+from collections import defaultdict, deque
 
-clients = []
+client_ping_times = defaultdict(list)
+cliqueue = deque();
 
 class SimpleEcho(WebSocket):
 
    def handleMessage(self):
        # kinds of messages...
+       data = json.loads(self.data)
+       print(data)
        # 1 - measure message to account for
+        # { 'kind': 'ping', 'sent': 234234 , 'client' : 'nandaja'}
+       if data['kind']  == 'ping':
+           received_time = time.time()
+           round_trip_time = received_time - data['sent_time']
+           client_ping_times[data['client']].append(round_trip_time)
+
        # 2 - request from client to get current lag measurements
+
 
    def handleConnected(self):
        # add new client
+       if self not in cliqueue:
+           cliqueue.append(self)
        # begin (async?) loop that pings client every 5 secs?
 
    def handleClose(self):
        # remove client
+       cliqueue.remove(self)
+
+
+def begin_pinging(loop):
+    # sends out pings every N seconds
+    for client in cliqueue:
+        data = {'sent_time': time.time(),
+                'client': client.address,
+                'kind': 'ping'}
+        client.sendMessage(data)
+        time.sleep(1)
+    loop.call_later(5, begin_pinging, loop)
 
 if __name__ == "__main__":
 
@@ -47,5 +73,7 @@ if __name__ == "__main__":
       sys.exit()
 
    signal.signal(signal.SIGINT, close_sig_handler)
-
+   loop = asyncio.get_event_loop()
+   loop.call_soon(begin_pinging, loop)
+   loop.run_forever()
    server.serveforever()
